@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bandhits - Dashboard Publik</title>
+  <link rel="icon" type="image/jpeg" href="assets/logo.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="css/style.css?v=1" rel="stylesheet">
+  <style>
+    .public-badge{ display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.2); color:#fff; padding:5px 12px; border-radius:20px; font-size:.75rem; font-weight:600; }
+    .public-topbar{ background:var(--bg-header-gradient); padding:20px 20px 46px; position:relative; overflow:hidden; color:#fff; }
+    .public-topbar::after{ content:''; position:absolute; left:0; right:0; bottom:-1px; height:34px; background:var(--bg-body); border-radius:50% 50% 0 0 / 100% 100%; transform:scaleX(1.3); }
+    .public-content{ max-width:960px; margin:0 auto; padding:0 20px 60px; }
+  </style>
+</head>
+<body>
+  <div class="public-topbar">
+    <div class="d-flex align-items-center gap-2">
+      <img src="assets/logo.svg" style="width:32px;height:32px;border-radius:10px;">
+      <h1 style="font-size:1.1rem;font-weight:700;margin:0;color:#fff;">Bandhits</h1>
+    </div>
+  </div>
+
+  <div class="public-content" style="margin-top:-30px; position:relative; z-index:5;">
+
+    <!-- HERO: Saldo Kas -->
+    <div class="hero-dashboard-card mb-3">
+      <div class="hero-card-topline">
+        <div class="hero-card-chip"><i class="bi bi-cpu-fill"></i></div>
+        <div class="hero-card-masked">•••• •••• •••• 8842</div>
+      </div>
+      <div class="hero-dashboard-label"><i class="bi bi-wallet2"></i> Saldo Kas</div>
+      <div class="hero-dashboard-value" id="pubSaldoKas">Rp 0</div>
+      <div class="hero-dashboard-sub">
+        <span>Uang Total (Kekayaan Bersih): <b id="pubUangTotal">Rp 0</b></span>
+        <span>&middot;</span>
+        <span>Pemasukan &minus; Pengeluaran = Saldo Kas</span>
+      </div>
+    </div>
+
+    <!-- INSIGHT CARD -->
+    <div class="insight-card mb-3 d-none" id="pubInsightCard">
+      <div class="insight-card-icon"><i class="bi bi-lightbulb-fill"></i></div>
+      <div class="insight-card-text" id="pubInsightCardText">-</div>
+    </div>
+
+    <div class="d-flex justify-content-end mb-2">
+      <span class="text-muted small" id="pubMomLabelText">-</span>
+    </div>
+
+    <!-- MINI STATS -->
+    <div class="mini-stat-row mb-3">
+      <div class="mini-stat-pill">
+        <div class="mini-stat-icon income"><i class="bi bi-arrow-down-circle-fill"></i></div>
+        <div class="mini-stat-info">
+          <div class="mini-stat-label">Pemasukan Bulan Ini</div>
+          <div class="mini-stat-value" id="pubPemasukan">Rp 0</div>
+          <div class="mini-stat-mom" id="pubPersenPemasukan">-</div>
+          <div class="mini-stat-mom" id="pubMomPemasukanBadge">-</div>
+        </div>
+      </div>
+      <div class="mini-stat-pill">
+        <div class="mini-stat-icon expense"><i class="bi bi-arrow-up-circle-fill"></i></div>
+        <div class="mini-stat-info">
+          <div class="mini-stat-label">Pengeluaran Bulan Ini</div>
+          <div class="mini-stat-value" id="pubPengeluaran">Rp 0</div>
+          <div class="mini-stat-mom" id="pubPersenPengeluaran">-</div>
+          <div class="mini-stat-mom" id="pubMomPengeluaranBadge">-</div>
+        </div>
+      </div>
+      <div class="mini-stat-pill">
+        <div class="mini-stat-icon debt"><i class="bi bi-credit-card-2-front-fill"></i></div>
+        <div class="mini-stat-info">
+          <div class="mini-stat-label">Sisa Pinjaman</div>
+          <div class="mini-stat-value" id="pubHutang">Rp 0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-4">
+        <div class="glass-card chart-card">
+          <h6>Distribusi Keuangan (Bulan Berjalan)</h6>
+          <canvas id="pubChartPie"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="glass-card chart-card" style="height:380px; overflow-y:auto;">
+          <h6>Persentase Arus Kas Bulan Ini</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small fw-semibold"><i class="bi bi-arrow-down-circle-fill text-success me-1"></i> Pemasukan</span>
+                <span class="small fw-bold" id="pubProgressPemasukanLabel">0%</span>
+              </div>
+              <div id="pubKategoriPemasukanBreakdown"></div>
+            </div>
+            <div class="col-md-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="small fw-semibold"><i class="bi bi-arrow-up-circle-fill text-danger me-1"></i> Pengeluaran</span>
+                <span class="small fw-bold" id="pubProgressPengeluaranLabel">0%</span>
+              </div>
+              <div id="pubKategoriPengeluaranBreakdown"></div>
+            </div>
+          </div>
+          <div class="text-muted small mt-3 text-center" id="pubProgressArusKasSub">Total arus kas bulan ini: Rp 0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-lg-6">
+        <div class="glass-card chart-card" style="height:380px;">
+          <h6>Grafik Saldo Harian (30 Hari Terakhir)</h6>
+          <canvas id="pubChartSaldo"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="glass-card table-card" style="height:380px; overflow-y:auto;">
+          <h6 class="fw-semibold mb-3">Proyeksi 4 Bulan ke Depan</h6>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead><tr><th>Bulan</th><th class="text-end">Pemasukan</th><th class="text-end">Pengeluaran</th><th class="text-end">Cicilan</th><th class="text-end">Saldo Akhir</th></tr></thead>
+              <tbody id="pubProyeksi4BulanBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <h6 class="fw-semibold mb-3">Transaksi Terbaru</h6>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th class="text-end">Nominal</th></tr></thead>
+          <tbody id="pubRecentBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="text-center text-muted small mt-4">Halaman ini hanya menampilkan ringkasan, tidak bisa mengubah data.</p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js?v=1"></script>
+  <script>
+    function formatRupiah(a){ a=Number(a)||0; return 'Rp ' + a.toLocaleString('id-ID'); }
+    function formatTanggal(str){ const d=new Date(str); if(isNaN(d)) return str; return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
+    function escapeHtml(str){ const div=document.createElement('div'); div.innerText = str==null?'':str; return div.innerHTML; }
+
+    let _pubKategoriPemasukan = [];
+    let _pubKategoriPengeluaran = [];
+    function getKategoriMeta(nama, tipe){
+      const list = tipe==='Pemasukan' ? _pubKategoriPemasukan : _pubKategoriPengeluaran;
+      const found = list.find(function(k){ return String(k.nama).toLowerCase() === String(nama||'').toLowerCase(); });
+      return found || { ikon:'bi-tag-fill', warna:'#6b7280' };
+    }
+
+    function renderMoM(d){
+      const pEl = document.getElementById('pubMomPemasukanBadge');
+      const eEl = document.getElementById('pubMomPengeluaranBadge');
+      const lEl = document.getElementById('pubMomLabelText');
+      if (lEl) lEl.innerText = d.momLabel || 'Belum cukup data';
+      function badge(percent){
+        if (percent===null || percent===undefined) return '<span class="text-muted">-</span>';
+        const up = percent >= 0;
+        const cls = up ? 'text-success' : 'text-danger';
+        const icon = up ? 'bi-arrow-up-short' : 'bi-arrow-down-short';
+        return '<span class="'+cls+'"><i class="bi '+icon+'"></i> '+Math.abs(percent)+'%</span>';
+      }
+      if (pEl) pEl.innerHTML = badge(d.momPemasukanPercent);
+      if (eEl) eEl.innerHTML = badge(d.momPengeluaranPercent);
+    }
+
+    function renderInsightCard(insight){
+      const card = document.getElementById('pubInsightCard');
+      const text = document.getElementById('pubInsightCardText');
+      if (!card || !text) return;
+      if (!insight){ card.classList.add('d-none'); return; }
+      text.innerHTML = 'Kategori pengeluaran terbesar bulan ini: <b>'+escapeHtml(insight.nama)+'</b> ('+formatRupiah(insight.total)+', '+insight.persen+'% dari total pengeluaran bulan ini)';
+      card.classList.remove('d-none');
+    }
+
+    function renderPersentaseBulanIni(d){
+      const totalPemasukanBulanIni = Number(d.totalPemasukanBulanIni || 0);
+      const totalPengeluaranBulanIni = Number(d.totalPengeluaranBulanIni || 0);
+      const totalArus = totalPemasukanBulanIni + totalPengeluaranBulanIni;
+
+      const persenPemasukan = totalArus > 0 ? Math.round((totalPemasukanBulanIni / totalArus) * 100) : 0;
+      const persenPengeluaran = totalArus > 0 ? Math.round((totalPengeluaranBulanIni / totalArus) * 100) : 0;
+
+      const lblPemasukan = document.getElementById('pubProgressPemasukanLabel');
+      const lblPengeluaran = document.getElementById('pubProgressPengeluaranLabel');
+      const subArus = document.getElementById('pubProgressArusKasSub');
+      if (lblPemasukan) lblPemasukan.textContent = persenPemasukan + '%';
+      if (lblPengeluaran) lblPengeluaran.textContent = persenPengeluaran + '%';
+      if (subArus) subArus.textContent = 'Total arus kas bulan ini: ' + formatRupiah(totalArus);
+
+      const pEl = document.getElementById('pubPersenPemasukan');
+      const eEl = document.getElementById('pubPersenPengeluaran');
+      if (pEl && eEl){
+        if (totalArus <= 0){
+          pEl.innerHTML = '<span class="text-muted">0% dari arus kas bulan ini</span>';
+          eEl.innerHTML = '<span class="text-muted">0% dari arus kas bulan ini</span>';
+        } else {
+          pEl.innerHTML = '<span class="text-success">'+persenPemasukan+'% dari arus kas bulan ini</span>';
+          eEl.innerHTML = '<span class="text-danger">'+persenPengeluaran+'% dari arus kas bulan ini</span>';
+        }
+      }
+    }
+
+    function renderKategoriBreakdownBulanIni(dataPemasukan, dataPengeluaran){
+      const now = new Date();
+      const ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+
+      function groupKategoriBulanIni(data){
+        const bulanIni = (data||[]).filter(function(x){
+          const d = new Date(x.tanggal);
+          return !isNaN(d) && (d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')) === ym;
+        });
+        const map = {};
+        bulanIni.forEach(function(x){
+          const nama = x.kategori || 'Lainnya';
+          map[nama] = (map[nama] || 0) + Number(x.nominal||0);
+        });
+        const total = bulanIni.reduce(function(s,x){ return s + Number(x.nominal||0); }, 0);
+        return Object.keys(map).map(function(nama){ return { nama:nama, total:map[nama] }; })
+          .sort(function(a,b){ return b.total - a.total; })
+          .map(function(item){ return { nama:item.nama, total:item.total, persen: total>0 ? Math.round((item.total/total)*100) : 0 }; });
+      }
+
+      function renderList(containerId, list, tipe){
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        if (!list.length){
+          el.innerHTML = '<p class="text-muted small mb-0">Belum ada data bulan ini</p>';
+          return;
+        }
+        el.innerHTML = list.map(function(item){
+          const meta = getKategoriMeta(item.nama, tipe);
+          return '<div class="progress-diagram-item mb-2">'+
+            '<div class="d-flex justify-content-between mb-1">'+
+              '<span class="small">'+escapeHtml(item.nama)+'</span>'+
+              '<span class="small fw-semibold">'+item.persen+'% ('+formatRupiah(item.total)+')</span>'+
+            '</div>'+
+            '<div class="progress" style="height:10px; border-radius:8px; background:var(--bg-body);">'+
+              '<div class="progress-bar" style="width:'+item.persen+'%; background:'+meta.warna+'; border-radius:8px; transition:width .6s ease;"></div>'+
+            '</div>'+
+          '</div>';
+        }).join('');
+      }
+
+      renderList('pubKategoriPemasukanBreakdown', groupKategoriBulanIni(dataPemasukan), 'Pemasukan');
+      renderList('pubKategoriPengeluaranBreakdown', groupKategoriBulanIni(dataPengeluaran), 'Pengeluaran');
+    }
+
+    function renderProyeksi4BulanTable(list){
+      const tbody = document.getElementById('pubProyeksi4BulanBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!list.length){ tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Belum ada data</td></tr>'; return; }
+      list.forEach(function(p){
+        tbody.innerHTML += '<tr><td class="fw-semibold">'+p.bulanLabel+'</td>'+
+          '<td class="text-end text-success">'+formatRupiah(p.pemasukanEstimasi)+'</td>'+
+          '<td class="text-end text-danger">'+formatRupiah(p.pengeluaranEstimasi)+'</td>'+
+          '<td class="text-end text-warning">'+formatRupiah(p.cicilanPinjaman)+'</td>'+
+          '<td class="text-end fw-bold '+(p.saldoAkhir>=0?'text-success':'text-danger')+'">'+formatRupiah(p.saldoAkhir)+'</td></tr>';
+      });
+    }
+
+    function renderRecent(list){
+      const tbody = document.getElementById('pubRecentBody'); tbody.innerHTML = '';
+      if (!list.length){ tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Belum ada transaksi</td></tr>'; return; }
+      list.forEach(function(t){
+        const badgeClass = t.jenis==='Pemasukan' ? 'badge-income' : (t.jenis==='Pembayaran Cicilan' ? 'badge-debt' : 'badge-expense');
+        tbody.innerHTML += '<tr><td>'+formatTanggal(t.tanggal)+'</td><td><span class="badge-jenis '+badgeClass+'">'+t.jenis+'</span></td><td>'+escapeHtml(t.keterangan||'-')+'</td><td class="text-end fw-semibold">'+formatRupiah(t.nominal)+'</td></tr>';
+      });
+    }
+
+    function renderPieChart(d){
+      new Chart(document.getElementById('pubChartPie'), {
+        type:'pie',
+        data:{ labels:['Pemasukan','Pengeluaran'], datasets:[{ data:[d.totalPemasukanBulanIni, d.totalPengeluaranBulanIni], backgroundColor:['#10b981','#e11d48'], borderWidth:0 }] },
+        options:{
+          responsive:true, maintainAspectRatio:false,
+          plugins:{
+            legend:{
+              position:'bottom',
+              labels:{
+                generateLabels:function(chart){
+                  const ds = chart.data.datasets[0];
+                  const total = ds.data.reduce(function(a,b){ return a+b; }, 0);
+                  return chart.data.labels.map(function(label, i){
+                    const value = ds.data[i];
+                    const percent = total>0 ? ((value/total)*100).toFixed(1) : 0;
+                    return { text: label+' ('+percent+'%)', fillStyle: ds.backgroundColor[i], strokeStyle: ds.backgroundColor[i], index: i, hidden:false };
+                  });
+                }
+              }
+            },
+            tooltip:{
+              callbacks:{
+                label:function(context){
+                  const value = context.parsed;
+                  const total = context.dataset.data.reduce(function(a,b){ return a+b; }, 0);
+                  const percent = total>0 ? ((value/total)*100).toFixed(1) : 0;
+                  return context.label+': '+formatRupiah(value)+' ('+percent+'%)';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderSaldoChart(d){
+      const dailyLabels = (d.dailyTrend||[]).map(p=>p.tanggalLabel);
+      new Chart(document.getElementById('pubChartSaldo'), {
+        type:'line', data:{ labels:dailyLabels, datasets:[{ label:'Saldo Kas', data:(d.dailyTrend||[]).map(p=>p.saldoKasKumulatif), borderColor:'#6C5CE7', backgroundColor:'rgba(108,92,231,0.1)', fill:true, tension:0.3, pointRadius:0 }]},
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{ maxTicksLimit:8 } } } }
+      });
+    }
+
+    function tampilkanPesanPublik_(teks){
+      const el = document.querySelector('.public-content');
+      el.insertAdjacentHTML('afterbegin', '<div class="glass-card text-center mb-3"><i class="bi bi-lock-fill" style="font-size:1.6rem;"></i><p class="mb-0 mt-2">'+escapeHtml(teks)+'</p></div>');
+    }
+    BandhitsApi.publicSnapshot().then(function(snap){
+      return [ snap.dashboard, snap.kategori, snap.pemasukan, snap.pengeluaran, snap.logoUrl ];
+    }).catch(function(err){
+      tampilkanPesanPublik_(err && err.code === 'PUBLIK_OFF' ? 'Dashboard publik sedang dinonaktifkan oleh pemilik.' : ((err && err.message) || 'Gagal memuat data.'));
+      return null;
+    }).then(function(results){
+      if (!results) return;
+      if (results[4]) document.querySelectorAll('.public-topbar img').forEach(function(i){ i.src = results[4]; });
+      const res = results[0];
+      const resKategori = results[1];
+      const resPemasukan = results[2];
+      const resPengeluaran = results[3];
+      if (!res.success) return;
+      const d = res.data;
+
+      if (resKategori.success){
+        _pubKategoriPemasukan = resKategori.data.filter(function(k){ return k.tipe==='Pemasukan'; });
+        _pubKategoriPengeluaran = resKategori.data.filter(function(k){ return k.tipe==='Pengeluaran'; });
+      }
+
+      document.getElementById('pubSaldoKas').innerText = formatRupiah(d.saldoKas);
+      document.getElementById('pubUangTotal').innerText = formatRupiah(d.totalUang);
+      document.getElementById('pubPemasukan').innerText = formatRupiah(d.totalPemasukanBulanIni);
+      document.getElementById('pubPengeluaran').innerText = formatRupiah(d.totalPengeluaranBulanIni);
+      document.getElementById('pubHutang').innerText = formatRupiah(d.totalHutang);
+
+      renderMoM(d);
+      renderPersentaseBulanIni(d);
+      renderKategoriBreakdownBulanIni(resPemasukan.success ? resPemasukan.data : [], resPengeluaran.success ? resPengeluaran.data : []);
+      renderInsightCard(d.insightTopKategori);
+      renderPieChart(d);
+      renderSaldoChart(d);
+      renderProyeksi4BulanTable(d.proyeksi4Bulan || []);
+      renderRecent(d.recentTransactions || []);
+    });
+  </script>
+</body>
+</html>

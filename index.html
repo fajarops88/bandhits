@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bandhits</title>
+  <link rel="icon" type="image/jpeg" href="assets/logo.svg">
+  <link rel="apple-touch-icon" href="assets/logo.svg">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6C5CE7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bandhits">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://cdn.datatables.net" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
+  <link href="css/style.css?v=1" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Layar Kunci PIN -->
+  <div id="pinOverlay" style="position:fixed;inset:0;z-index:200000;background:var(--bg-header-gradient);display:flex;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--bg-card);border-radius:24px;padding:30px 26px;max-width:340px;width:100%;box-shadow:var(--shadow-float);text-align:center;">
+      <img src="assets/logo.svg" alt="Logo Bandhits" style="width:96px;height:96px;border-radius:24px;object-fit:cover;margin:0 auto 18px;display:block;box-shadow:var(--shadow-card);">
+      <h5 class="fw-bold mb-2">Masuk ke Bandhits</h5>
+      <p class="text-muted small mb-3">Masukkan PIN untuk melanjutkan</p>
+      <input type="password" inputmode="numeric" maxlength="6" id="pinInput" class="form-control text-center mb-2" style="font-size:1.4rem;letter-spacing:8px;" placeholder="••••">
+      <div class="text-danger small mb-3" id="pinError" style="display:none;">PIN salah, coba lagi.</div>
+      <button class="btn btn-primary w-100" onclick="submitPinLogin()">Masuk</button>
+    </div>
+  </div>
+
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <button id="btnForceCloseLoading" style="display:none; position:absolute; bottom:80px; background:#fff; color:#4834D4; border:none; padding:10px 20px; border-radius:20px; font-weight:700;">Batal / Muat Ulang</button>
+  </div>
+
+  <div class="app-wrapper">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo-wrap">
+          <img src="assets/logo.svg" class="brand-logo" alt="Logo Bandhits">
+          <div class="brand-logo-edit" onclick="openModalLogo()" title="Ganti Logo"><i class="bi bi-pencil-fill"></i></div>
+        </div>
+        Bandhits
+      </div>
+      <nav>
+        <a href="#" class="nav-link active" data-page="dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        <a href="#" class="nav-link" data-page="pemasukan"><i class="bi bi-arrow-down-circle-fill"></i> Pemasukan</a>
+        <a href="#" class="nav-link" data-page="pengeluaran"><i class="bi bi-arrow-up-circle-fill"></i> Pengeluaran</a>
+        <a href="#" class="nav-link" data-page="hutang"><i class="bi bi-credit-card-2-front-fill"></i> Pinjaman</a>
+        <a href="#" class="nav-link" data-page="pengingat"><i class="bi bi-bell-fill"></i> Pengingat</a>
+        <a href="#" class="nav-link" data-page="kalender"><i class="bi bi-calendar3-week"></i> Kalender</a>
+        <a href="#" class="nav-link" data-page="riwayat"><i class="bi bi-clock-history"></i> Riwayat</a>
+        <a href="#" class="nav-link" data-page="laporan"><i class="bi bi-bar-chart-fill"></i> Laporan</a>
+        <a href="#" class="nav-link" data-page="proyeksi"><i class="bi bi-graph-up"></i> Proyeksi Saldo</a>
+      </nav>
+      <div class="sidebar-footer">Bandhits &copy; <span id="tahunFooter"></span></div>
+    </aside>
+
+    <div class="main-content">
+      <header class="topbar">
+        <div class="d-flex align-items-center gap-3">
+          <h1 id="pageTitle">Dashboard</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="topbar-saldo-pill d-none d-md-flex"><i class="bi bi-wallet2"></i> <span id="topbarSaldoKas">Rp 0</span></span>
+          <span class="date-label d-none d-md-inline" id="todayDate"></span>
+          <button id="btnDarkMode"><i class="bi bi-moon-stars-fill"></i></button>
+          <div class="topbar-avatar" onclick="openMenuSheet()"><i class="bi bi-person-fill"></i></div>
+        </div>
+      </header>
+
+      <main class="content-area">
+        <div class="page-content fade-in" id="page-dashboard">
+
+  <div class="alert-jatuh-tempo d-none" id="alertJatuhTempo">
+    <div class="d-flex justify-content-between align-items-center" style="cursor:pointer;" onclick="toggleJatuhTempoDetail()">
+      <div><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i><span id="teksJatuhTempo"></span></div>
+      <i class="bi bi-chevron-down" id="iconJatuhTempoToggle"></i>
+    </div>
+    <div class="d-none" id="jatuhTempoDetailPanel" style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.12);">
+      <div id="jatuhTempoDetailList"></div>
+      <div class="text-end mt-2">
+        <a href="javascript:void(0)" onclick="event.stopPropagation(); navigateTo('pengingat')" class="small fw-semibold" style="text-decoration:underline;">Lihat semua di Pengingat &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-greeting" id="dashboardGreeting">Selamat datang!</div>
+
+  <div class="d-flex justify-content-end gap-2 mb-3 d-none d-md-flex">
+    <button class="btn btn-gradient-income btn-sm" onclick="openModalPemasukan()"><i class="bi bi-plus-lg"></i> Pemasukan Cepat</button>
+    <button class="btn btn-gradient-expense btn-sm" onclick="openModalPengeluaran()"><i class="bi bi-plus-lg"></i> Pengeluaran Cepat</button>
+  </div>
+
+  <!-- HERO: Saldo Kas (kartu mengambang ala e-wallet) -->
+  <div class="hero-dashboard-card mb-3">
+    <button class="hero-privacy-toggle" id="btnPrivacyToggle" title="Sembunyikan/Tampilkan Saldo"><i class="bi bi-eye-fill" id="iconPrivacyToggle"></i></button>
+    <div class="hero-card-topline">
+      <div class="hero-card-chip"><i class="bi bi-cpu-fill"></i></div>
+      <div class="hero-card-masked">•••• •••• •••• 8842</div>
+    </div>
+    <div class="hero-dashboard-label"><i class="bi bi-wallet2"></i> Saldo Kas</div>
+    <div class="hero-dashboard-value" id="sumSaldoKas">Rp 0</div>
+    <div class="hero-dashboard-sub">
+      <span>Uang Total (Kekayaan Bersih): <b id="sumUangTotal">Rp 0</b></span>
+      <span>&middot;</span>
+      <span>Pemasukan &minus; Pengeluaran = Saldo Kas</span>
+    </div>
+  </div>
+
+  <!-- INSIGHT CARD (ala Mandiri) -->
+  <div class="insight-card mb-3 d-none" id="insightCard">
+    <div class="insight-card-icon"><i class="bi bi-lightbulb-fill"></i></div>
+    <div class="insight-card-text" id="insightCardText">-</div>
+  </div>
+
+  <div class="d-flex justify-content-end mb-2">
+    <span class="text-muted small" id="momLabelText">-</span>
+  </div>
+
+  <!-- MINI STATS -->
+  <div class="mini-stat-row mb-3">
+    <div class="mini-stat-pill">
+      <div class="mini-stat-icon income"><i class="bi bi-arrow-down-circle-fill"></i></div>
+      <div class="mini-stat-info">
+        <div class="mini-stat-label">Pemasukan Bulan Berjalan</div>
+        <div class="mini-stat-value" id="sumPemasukan">Rp 0</div>
+        <div class="mini-stat-mom" id="persenPemasukan">-</div>
+        <div class="mini-stat-mom" id="momPemasukanBadge">-</div>
+      </div>
+    </div>
+    <div class="mini-stat-pill">
+      <div class="mini-stat-icon expense"><i class="bi bi-arrow-up-circle-fill"></i></div>
+      <div class="mini-stat-info">
+        <div class="mini-stat-label">Pengeluaran Bulan Berjalan</div>
+        <div class="mini-stat-value" id="sumPengeluaran">Rp 0</div>
+        <div class="mini-stat-mom" id="persenPengeluaran">-</div>
+        <div class="mini-stat-mom" id="momPengeluaranBadge">-</div>
+      </div>
+    </div>
+    <div class="mini-stat-pill">
+      <div class="mini-stat-icon debt"><i class="bi bi-credit-card-2-front-fill"></i></div>
+      <div class="mini-stat-info">
+        <div class="mini-stat-label">Sisa Pinjaman</div>
+        <div class="mini-stat-value" id="sumHutang">Rp 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU GRID -->
+  <div class="glass-card mb-3">
+    <div class="menu-grid">
+      <div class="menu-grid-item" onclick="openModalPemasukan()"><div class="menu-grid-icon"><i class="bi bi-arrow-down-circle-fill"></i></div><div class="menu-grid-label">Pemasukan</div></div>
+      <div class="menu-grid-item" onclick="openModalPengeluaran()"><div class="menu-grid-icon"><i class="bi bi-arrow-up-circle-fill"></i></div><div class="menu-grid-label">Pengeluaran</div></div>
+      <div class="menu-grid-item" onclick="navigateTo('hutang')"><div class="menu-grid-icon"><i class="bi bi-credit-card-2-front-fill"></i></div><div class="menu-grid-label">Pinjaman</div></div>
+      <div class="menu-grid-item" onclick="navigateTo('laporan')"><div class="menu-grid-icon"><i class="bi bi-bar-chart-fill"></i></div><div class="menu-grid-label">Laporan</div></div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-4">
+      <div class="glass-card chart-card">
+        <h6>Distribusi Keuangan (Bulan Berjalan)</h6>
+        <canvas id="chartPie"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="glass-card chart-card" style="height:380px; overflow-y:auto;">
+        <h6>Persentase Arus Kas Bulan Ini</h6>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="small fw-semibold"><i class="bi bi-arrow-down-circle-fill text-success me-1"></i> Pemasukan</span>
+              <span class="small fw-bold" id="progressPemasukanLabel">0%</span>
+            </div>
+            <div id="kategoriPemasukanBreakdown"></div>
+          </div>
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="small fw-semibold"><i class="bi bi-arrow-up-circle-fill text-danger me-1"></i> Pengeluaran</span>
+              <span class="small fw-bold" id="progressPengeluaranLabel">0%</span>
+            </div>
+            <div id="kategoriPengeluaranBreakdown"></div>
+          </div>
+        </div>
+        <div class="text-muted small mt-3 text-center" id="progressArusKasSub">Total arus kas bulan ini: Rp 0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-6">
+      <div class="glass-card chart-card" style="height:380px;">
+        <h6>Grafik Saldo Harian (30 Hari Terakhir)</h6>
+        <canvas id="chartSaldo"></canvas>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="glass-card table-card" style="height:380px; overflow-y:auto;">
+        <h6 class="fw-semibold mb-3">Proyeksi 4 Bulan ke Depan</h6>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead><tr><th>Bulan</th><th class="text-end">Pemasukan</th><th class="text-end">Pengeluaran</th><th class="text-end">Cicilan</th><th class="text-end">Saldo Akhir</th></tr></thead>
+            <tbody id="proyeksi4BulanBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <h6 class="fw-semibold mb-3">Transaksi Terbaru</h6>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead><tr><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th class="text-end">Nominal</th></tr></thead>
+        <tbody id="recentTransBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+        <div class="page-content d-none fade-in" id="page-pemasukan">
+  <div class="hero-dashboard-card mb-3" id="heroPemasukanCard">
+    <button class="hero-privacy-toggle" onclick="togglePemasukanHeroPrivacy()"><i class="bi bi-eye-slash-fill" id="iconPemasukanHeroPrivacy"></i></button>
+    <div class="hero-card-topline">
+      <div class="hero-card-chip"><i class="bi bi-arrow-down-circle-fill"></i></div>
+    </div>
+    <div class="hero-dashboard-label"><i class="bi bi-calendar3"></i> PEMASUKAN BULAN INI</div>
+    <div class="hero-dashboard-value" id="heroPemasukanValue">Rp 0</div>
+    <div class="hero-dashboard-sub" id="heroPemasukanSub">-</div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h6 class="fw-semibold mb-0">Data Pemasukan</h6>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" onclick="openModalKategori('Pemasukan')"><i class="bi bi-tags-fill"></i> Kelola Kategori</button>
+      <button class="btn btn-gradient-income" onclick="openModalPemasukan()"><i class="bi bi-plus-lg"></i> Tambah Pemasukan</button>
+    </div>
+  </div>
+
+  <div class="search-bar-large">
+    <i class="bi bi-search"></i>
+    <input type="text" id="pemasukanSearchInput" placeholder="Cari pemasukan (kategori/keterangan)..." oninput="fillTablePemasukan(window._dataPemasukan||[])">
+  </div>
+
+  <div id="pemasukanGroupsContainer"></div>
+</div>
+
+<!-- Modal Tambah/Edit Pemasukan -->
+<div class="modal fade" id="modalPemasukan" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formPemasukan" onsubmit="submitPemasukan(event)">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="modalPemasukanTitle">Tambah Pemasukan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="pemasukanId">
+          <div class="mb-3">
+            <label class="form-label">Tanggal</label>
+            <input type="date" class="form-control" id="pemasukanTanggal" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Kategori</label>
+            <input type="text" class="form-control" id="pemasukanKategori" list="datalistKategoriPemasukan" placeholder="Contoh: Gaji" required>
+            <datalist id="datalistKategoriPemasukan"></datalist>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Keterangan</label>
+            <textarea class="form-control" id="pemasukanKeterangan" rows="2"></textarea>
+          </div>
+          <div class="mb-1">
+            <label class="form-label">Nominal</label>
+            <div class="nominal-input-group">
+              <span class="nominal-prefix">Rp</span>
+              <input type="text" id="pemasukanNominal" oninput="parseRupiahInput(this)" placeholder="0" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-gradient-income">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+        <div class="page-content d-none fade-in" id="page-pengeluaran">
+  <div class="hero-dashboard-card mb-3" id="heroPengeluaranCard">
+    <button class="hero-privacy-toggle" onclick="togglePengeluaranHeroPrivacy()"><i class="bi bi-eye-slash-fill" id="iconPengeluaranHeroPrivacy"></i></button>
+    <div class="hero-card-topline">
+      <div class="hero-card-chip"><i class="bi bi-arrow-up-circle-fill"></i></div>
+    </div>
+    <div class="hero-dashboard-label"><i class="bi bi-calendar3"></i> PENGELUARAN BULAN INI</div>
+    <div class="hero-dashboard-value" id="heroPengeluaranValue">Rp 0</div>
+    <div class="hero-dashboard-sub" id="heroPengeluaranSub">-</div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h6 class="fw-semibold mb-0">Data Pengeluaran</h6>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <select class="form-select form-select-sm" id="filterKategoriPengeluaran" style="width:auto;">
+        <option value="">Semua Kategori</option>
+      </select>
+      <button class="btn btn-outline-secondary btn-sm" onclick="openModalKategori('Pengeluaran')"><i class="bi bi-tags-fill"></i> Kelola Kategori</button>
+      <button class="btn btn-gradient-expense" onclick="openModalPengeluaran()"><i class="bi bi-plus-lg"></i> Tambah Pengeluaran</button>
+    </div>
+  </div>
+
+  <div class="search-bar-large">
+    <i class="bi bi-search"></i>
+    <input type="text" id="pengeluaranSearchInput" placeholder="Cari pengeluaran (kategori/keterangan)..." oninput="fillTablePengeluaran(window._dataPengeluaran||[])">
+  </div>
+
+  <div id="pengeluaranGroupsContainer"></div>
+</div>
+
+<!-- Modal Tambah/Edit Pengeluaran -->
+<div class="modal fade" id="modalPengeluaran" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formPengeluaran" onsubmit="submitPengeluaran(event)">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="modalPengeluaranTitle">Tambah Pengeluaran</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="pengeluaranId">
+          <div class="mb-3">
+            <label class="form-label">Tanggal</label>
+            <input type="date" class="form-control" id="pengeluaranTanggal" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Kategori</label>
+            <input type="text" class="form-control" id="pengeluaranKategori" list="datalistKategoriPengeluaran" placeholder="Contoh: Makan" required>
+            <datalist id="datalistKategoriPengeluaran"></datalist>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Keterangan</label>
+            <textarea class="form-control" id="pengeluaranKeterangan" rows="2"></textarea>
+          </div>
+          <div class="mb-1">
+            <label class="form-label">Nominal</label>
+            <div class="nominal-input-group">
+              <span class="nominal-prefix">Rp</span>
+              <input type="text" id="pengeluaranNominal" oninput="parseRupiahInput(this)" placeholder="0" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-gradient-expense">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+        <div class="page-content d-none fade-in" id="page-hutang">
+  <div class="hero-dashboard-card mb-3" id="heroPinjamanCard">
+    <button class="hero-privacy-toggle" onclick="togglePinjamanHeroPrivacy()"><i class="bi bi-eye-slash-fill" id="iconPinjamanHeroPrivacy"></i></button>
+    <div class="hero-card-topline">
+      <div class="hero-card-chip"><i class="bi bi-credit-card-2-front-fill"></i></div>
+    </div>
+    <div class="hero-dashboard-label"><i class="bi bi-calendar3"></i> CICILAN JATUH TEMPO BULAN INI</div>
+    <div class="hero-dashboard-value" id="heroPinjamanValue">Rp 0</div>
+    <div class="hero-dashboard-sub" id="heroPinjamanSub">-</div>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="fw-semibold mb-0">Data Pinjaman</h6>
+    <button class="btn btn-gradient-debt" onclick="openModalHutang()"><i class="bi bi-plus-lg"></i> Tambah Pinjaman</button>
+  </div>
+
+  <div class="mini-stat-row cols-2 mb-3" id="hutangSummaryContainer"></div>
+
+  <div class="hutang-table-wrap table-card">
+    <div class="table-responsive">
+      <table class="table align-middle" id="tableHutang" style="width:100%">
+        <thead>
+          <tr>
+            <th>Nama Pihak</th>
+            <th>Keterangan</th>
+            <th class="text-end">Nominal</th>
+            <th class="text-end">Cicilan/Bulan</th>
+            <th class="text-end">Sisa</th>
+            <th>Cicilan Ke</th>
+            <th>Jatuh Tempo</th>
+            <th>Status</th>
+            <th class="text-center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="hutang-cards-wrap" id="hutangCardsContainer"></div>
+</div>
+
+<!-- Modal Tambah/Edit Pinjaman -->
+<div class="modal fade" id="modalHutang" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formHutang" onsubmit="submitHutang(event)">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="modalHutangTitle">Tambah Pinjaman</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="hutangId">
+          <div class="mb-3">
+            <label class="form-label">Tanggal</label>
+            <input type="date" class="form-control" id="hutangTanggal" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nama Pihak (Pemberi Pinjaman)</label>
+            <input type="text" class="form-control" id="hutangNamaPihak" placeholder="Contoh: Bank ABC / Koperasi XYZ" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Keterangan</label>
+            <textarea class="form-control" id="hutangKeterangan" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nominal Pinjaman</label>
+            <input type="text" class="form-control" id="hutangNominal" oninput="parseRupiahInput(this); updatePreviewCicilan();" placeholder="0" required>
+          </div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label">Jatuh Tempo Cicilan Pertama</label>
+              <input type="date" class="form-control" id="hutangJatuhTempo" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Jangka Waktu (bulan)</label>
+              <input type="number" min="1" step="1" class="form-control" id="hutangJangkaWaktu" oninput="updatePreviewCicilan()" placeholder="12" required>
+            </div>
+          </div>
+          <div class="mt-3 p-2 rounded" id="previewCicilanBox" style="display:none; background:var(--bg-body); border:1px dashed var(--border-color);">
+            <span class="text-muted small">Estimasi Cicilan per Bulan: </span>
+            <span class="fw-semibold" id="previewCicilanNilai">Rp 0</span>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-gradient-debt">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Bayar Cicilan -->
+<div class="modal fade" id="modalBayarHutang" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="formBayarHutang" onsubmit="submitBayarHutang(event)">
+        <div class="modal-header border-0">
+          <h5 class="modal-title"><i class="bi bi-cash-coin"></i> Bayar Cicilan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="bayarHutangId">
+          <div class="p-3 rounded mb-3" style="background:var(--bg-body); border:1px solid var(--border-color);">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Nama Pihak</span>
+              <span class="fw-semibold" id="bayarNamaPihak">-</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Cicilan Ke</span>
+              <span class="fw-semibold"><span id="bayarCicilanKe">-</span> / <span id="bayarJangkaWaktu">-</span></span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Jatuh Tempo Berikutnya</span>
+              <span class="fw-semibold" id="bayarJatuhTempoBerikutnya">-</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Sisa Pinjaman</span>
+              <span class="fw-semibold" id="bayarSisaHutang">Rp 0</span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tanggal Bayar</label>
+            <input type="date" class="form-control" id="bayarTanggal" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nominal Dibayar</label>
+            <input type="text" class="form-control" id="bayarNominal" oninput="parseRupiahInput(this)" placeholder="0" required>
+          </div>
+          <div class="mb-1">
+            <label class="form-label">Keterangan (opsional)</label>
+            <textarea class="form-control" id="bayarKeterangan" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-gradient-income">Simpan Pembayaran</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+        <div class="page-content d-none fade-in" id="page-pengingat">
+
+  <div class="hero-dashboard-card mb-3">
+    <div class="hero-dashboard-label"><i class="bi bi-bell-fill"></i> Total Seluruh Tunggakan</div>
+    <div class="hero-dashboard-value" id="heroTotalSeluruh">Rp 0</div>
+    <div class="hero-dashboard-sub">
+      <span id="heroTotalSub">0 cicilan aktif belum lunas</span>
+    </div>
+  </div>
+
+  <div class="mini-stat-row cols-2 mb-3">
+    <div class="mini-stat-pill">
+      <div class="mini-stat-icon balance"><i class="bi bi-calendar-week-fill"></i></div>
+      <div class="mini-stat-info">
+        <div class="mini-stat-label">Minggu Ini (<span id="heroMingguLabel">-</span>)</div>
+        <div class="mini-stat-value" id="heroMingguIni">Rp 0</div>
+      </div>
+    </div>
+    <div class="mini-stat-pill">
+      <div class="mini-stat-icon expense"><i class="bi bi-exclamation-triangle-fill"></i></div>
+      <div class="mini-stat-info">
+        <div class="mini-stat-label">Terlambat</div>
+        <div class="mini-stat-value" id="heroTotalTerlambat">Rp 0</div>
+        <div class="mini-stat-mom" id="heroJumlahTerlambat">0 cicilan</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="terlambatSection" class="mb-3" style="display:none;">
+    <h6 class="fw-semibold mb-3 text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Cicilan Terlambat</h6>
+    <div id="listTerlambat"></div>
+  </div>
+
+  <div id="ledgerContainer"></div>
+</div>
+        <div class="page-content d-none fade-in" id="page-kalender">
+
+  <div class="glass-card mb-3">
+    <div class="calendar-header">
+      <div class="calendar-nav">
+        <button onclick="calPrevMonth()"><i class="bi bi-chevron-left"></i></button>
+        <div class="calendar-month-label" id="calMonthLabel">-</div>
+        <button onclick="calNextMonth()"><i class="bi bi-chevron-right"></i></button>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-sm btn-outline-primary" onclick="calGoToday()"><i class="bi bi-calendar-check"></i> Hari Ini</button>
+        <button class="btn btn-sm btn-primary" onclick="syncGoogleCalendar()"><i class="bi bi-google"></i> Sync ke Google Calendar</button>
+      </div>
+    </div>
+
+    <div class="calendar-grid mb-1">
+      <div class="calendar-dow">Min</div>
+      <div class="calendar-dow">Sen</div>
+      <div class="calendar-dow">Sel</div>
+      <div class="calendar-dow">Rab</div>
+      <div class="calendar-dow">Kam</div>
+      <div class="calendar-dow">Jum</div>
+      <div class="calendar-dow">Sab</div>
+    </div>
+    <div class="calendar-grid" id="calGrid"></div>
+
+    <div class="d-flex gap-3 justify-content-center flex-wrap mt-3 pt-3" style="border-top:1px solid var(--border-color);">
+      <div class="d-flex align-items-center gap-2"><span class="calendar-dot pemasukan"></span><span class="small text-muted">Pemasukan</span></div>
+      <div class="d-flex align-items-center gap-2"><span class="calendar-dot pengeluaran"></span><span class="small text-muted">Pengeluaran</span></div>
+      <div class="d-flex align-items-center gap-2"><span class="calendar-dot pinjaman"></span><span class="small text-muted">Cicilan Pinjaman</span></div>
+    </div>
+  </div>
+
+  <div class="glass-card" id="calDayDetailCard" style="display:none;">
+    <h6 class="fw-semibold mb-3" id="calDayDetailTitle">Transaksi</h6>
+    <div id="calDayDetailList"></div>
+  </div>
+</div>
+        <div class="page-content d-none fade-in" id="page-riwayat">
+
+  <div class="riwayat-filter-sticky">
+    <div class="search-bar-large">
+      <i class="bi bi-search"></i>
+      <input type="text" id="riwayatFilterKeyword" placeholder="Cari transaksi (kategori/keterangan)..." oninput="applyRiwayatFilter()">
+      <div class="btn-filter-toggle" id="btnToggleRiwayatFilter" onclick="toggleRiwayatFilterPanel()" title="Filter Lanjutan">
+        <i class="bi bi-sliders"></i>
+      </div>
+    </div>
+
+    <div class="glass-card mb-3 filter-panel" id="riwayatFilterPanel">
+      <div class="row g-2 align-items-end">
+        <div class="col-6 col-md-2">
+          <label class="form-label small">Dari Tanggal</label>
+          <input type="date" class="form-control form-control-sm" id="riwayatFilterStart">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small">Sampai Tanggal</label>
+          <input type="date" class="form-control form-control-sm" id="riwayatFilterEnd">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small">Jenis</label>
+          <select class="form-select form-select-sm" id="riwayatFilterJenis">
+            <option value="">Semua</option>
+            <option value="Pemasukan">Pemasukan</option>
+            <option value="Pengeluaran">Pengeluaran</option>
+            <option value="Hutang">Pinjaman</option>
+            <option value="Pembayaran Cicilan">Pembayaran Cicilan</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small">Nominal Min</label>
+          <input type="text" class="form-control form-control-sm" id="riwayatFilterMin" oninput="parseRupiahInput(this)" placeholder="0">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small">Nominal Maks</label>
+          <input type="text" class="form-control form-control-sm" id="riwayatFilterMax" oninput="parseRupiahInput(this)" placeholder="0">
+        </div>
+        <div class="col-6 col-md-2 d-flex gap-1">
+          <button class="btn btn-primary btn-sm flex-fill" onclick="applyRiwayatFilter()">Terapkan</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="resetRiwayatFilter()"><i class="bi bi-arrow-counterclockwise"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="riwayatFeedContainer"></div>
+</div>
+        <div class="page-content d-none fade-in" id="page-laporan">
+
+  <div class="hero-dashboard-card mb-3">
+    <div class="hero-dashboard-label"><i class="bi bi-graph-up-arrow"></i> Saldo Akhir Bulan Terakhir</div>
+    <div class="hero-dashboard-value" id="rekapHeroSaldoAkhir">Rp 0</div>
+    <div class="hero-dashboard-sub">
+      <span id="rekapHeroLabel">-</span>
+    </div>
+  </div>
+
+  <div class="table-card mb-3 table-desktop-only">
+    <h6 class="fw-semibold mb-3">Rekap Bulanan</h6>
+    <p class="text-muted small mb-3">Saldo Awal, Total Pemasukan, dan Pengeluaran (sudah termasuk Pembayaran Cicilan) untuk setiap bulan yang tercatat, otomatis dari seluruh riwayat.</p>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Bulan</th>
+            <th class="text-end">Saldo Awal</th>
+            <th class="text-end">Total Pemasukan</th>
+            <th class="text-end">Pengeluaran Murni</th>
+            <th class="text-end">Pembayaran Cicilan</th>
+            <th class="text-end">Total Pengeluaran</th>
+            <th class="text-end">Selisih</th>
+            <th class="text-end">Saldo Akhir</th>
+          </tr>
+        </thead>
+        <tbody id="rekapBulananBody"><tr><td colspan="8" class="text-center text-muted py-3">Memuat data...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mb-3 cards-mobile-only">
+    <div class="glass-card mb-3">
+      <h6 class="fw-semibold mb-2">Rekap Bulanan</h6>
+      <p class="text-muted small mb-0">Saldo Awal, Total Pemasukan, dan Pengeluaran (sudah termasuk Pembayaran Cicilan) untuk setiap bulan yang tercatat.</p>
+    </div>
+    <div id="rekapCardsContainer"></div>
+  </div>
+
+  <div class="table-card mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <h6 class="fw-semibold mb-0">Backup Data</h6>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-outline-primary btn-sm" onclick="aktifkanBackupOtomatis()"><i class="bi bi-clock-history"></i> Aktifkan Backup Otomatis Bulanan</button>
+        <button class="btn btn-primary btn-sm" onclick="backupSekarang()"><i class="bi bi-cloud-arrow-up-fill"></i> Backup Sekarang</button>
+        <button class="btn btn-outline-danger btn-sm" onclick="cetakRingkasanBulanIni()"><i class="bi bi-file-earmark-pdf-fill"></i> Cetak Ringkasan Bulan Ini</button>
+      </div>
+    </div>
+    <p class="text-muted small mb-2">Backup menyalin seluruh spreadsheet Bandhits ke folder "Bandhits Backups" di Google Drive Anda.</p>
+    <div id="backupListContainer"><p class="text-muted small mb-0">Memuat daftar backup...</p></div>
+  </div>
+
+  <div class="glass-card mb-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">Periode</label>
+        <select class="form-select" id="laporanPeriode">
+          <option value="harian">Rekap Harian</option>
+          <option value="mingguan">Rekap Mingguan</option>
+          <option value="bulanan" selected>Rekap Bulanan</option>
+          <option value="tahunan">Rekap Tahunan</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Dari Tanggal</label>
+        <input type="date" class="form-control" id="laporanStart">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Sampai Tanggal</label>
+        <input type="date" class="form-control" id="laporanEnd">
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-primary w-100" onclick="generateLaporan()"><i class="bi bi-search"></i> Tampilkan</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mb-3">
+    <button class="btn btn-outline-success btn-sm" onclick="exportCSV()"><i class="bi bi-file-earmark-excel"></i> Export Excel (CSV)</button>
+    <button class="btn btn-outline-danger btn-sm" onclick="exportPDF()"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+    <button class="btn btn-outline-secondary btn-sm" onclick="printLaporan()"><i class="bi bi-printer"></i> Print</button>
+  </div>
+
+  <div class="table-card mb-3">
+    <div class="table-responsive">
+      <table class="table align-middle" id="tableLaporan">
+        <thead><tr><th>Periode</th><th class="text-end">Pemasukan</th><th class="text-end">Pengeluaran</th><th class="text-end">Pinjaman</th><th class="text-end">Saldo</th></tr></thead>
+        <tbody><tr><td colspan="5" class="text-center text-muted py-3">Pilih periode lalu klik "Tampilkan"</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <h6 class="fw-semibold mb-3"><i class="bi bi-journal-text"></i> Rincian per Bulan</h6>
+    <div class="accordion periode-accordion" id="laporanRinciAccordion"></div>
+  </div>
+</div>
+        <div class="page-content d-none fade-in" id="page-proyeksi">
+
+  <div class="hero-dashboard-card mb-3">
+    <div class="hero-dashboard-label"><i class="bi bi-flag-fill"></i> Proyeksi Saldo 4 Bulan ke Depan</div>
+    <div class="hero-dashboard-value" id="proyeksiSaldoAkhir">Rp 0</div>
+    <div class="hero-dashboard-sub">
+      <span>Saldo Kas Saat Ini: <b id="proyeksiSaldoSaatIni">Rp 0</b></span>
+      <span>&middot;</span>
+      <span>Estimasi hingga bulan <span id="proyeksiHeroBulanLabel">-</span></span>
+    </div>
+  </div>
+
+  <div class="glass-card chart-card mb-3" style="height:360px;">
+    <h6>Proyeksi Saldo Kas 3 Tahun ke Depan (36 Bulan)</h6>
+    <canvas id="chartProyeksi"></canvas>
+  </div>
+
+  <div class="table-card table-desktop-only">
+    <h6 class="fw-semibold mb-3">Rincian Bulanan</h6>
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Bulan</th>
+            <th class="text-end">Pemasukan</th>
+            <th class="text-end">Pengeluaran</th>
+            <th class="text-end">Cicilan Pinjaman (Pasti)</th>
+            <th class="text-end">Saldo Akhir</th>
+          </tr>
+        </thead>
+        <tbody id="proyeksiTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="cards-mobile-only">
+    <h6 class="fw-semibold mb-3">Rincian Bulanan</h6>
+    <div id="proyeksiCardsContainer"></div>
+  </div>
+</div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation (mobile) -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="bottom-nav-item" data-page="dashboard"><i class="bi bi-grid-1x2-fill"></i>Beranda</button>
+    <button class="bottom-nav-item" data-page="riwayat"><i class="bi bi-clock-history"></i>Riwayat</button>
+    <button class="bottom-nav-item center" onclick="openQuickAddSheet()"><span class="bottom-nav-center-btn"><i class="bi bi-plus-lg"></i></span></button>
+    <button class="bottom-nav-item" data-page="pengingat"><i class="bi bi-bell-fill"></i>Pengingat<span class="bottom-nav-badge d-none" id="bottomNavBadgePengingat">0</span></button>
+    <button class="bottom-nav-item" onclick="openMenuSheet()"><i class="bi bi-grid-3x3-gap-fill"></i>Lainnya</button>
+  </nav>
+
+  <!-- Modal Ganti Logo -->
+  <div class="modal fade" id="modalLogo" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="formLogo" onsubmit="submitLogo(event)">
+          <div class="modal-header border-0">
+            <h5 class="modal-title"><i class="bi bi-image"></i> Ganti Logo Aplikasi</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <label class="form-label">Link atau ID File Google Drive</label>
+            <input type="text" class="form-control" id="logoInput" placeholder="https://drive.google.com/file/d/.../view" oninput="previewLogoInput()">
+            <div class="form-text">
+              Upload gambar ke Google Drive &rarr; klik kanan &rarr; <b>Share</b> &rarr; ubah akses ke
+              <b>"Anyone with the link"</b> &rarr; tempel link/ID-nya di sini.
+            </div>
+            <div class="logo-preview-box" id="logoPreviewBox" style="display:none;">
+              <img id="logoPreviewImg" src="" alt="Preview logo">
+            </div>
+          </div>
+          <div class="modal-footer border-0 d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetLogoDefault()"><i class="bi bi-arrow-counterclockwise"></i> Kembalikan Default</button>
+            <div>
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary">Simpan Logo</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ubah PIN Login -->
+  <div class="modal fade" id="modalUbahPin" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form id="formUbahPin" onsubmit="submitUbahPin(event)">
+          <div class="modal-header border-0">
+            <h5 class="modal-title"><i class="bi bi-key-fill"></i> Ubah PIN Login</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">PIN Lama</label>
+              <input type="password" inputmode="numeric" maxlength="6" class="form-control" id="pinLama" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">PIN Baru (4-6 digit angka)</label>
+              <input type="password" inputmode="numeric" maxlength="6" class="form-control" id="pinBaru" required>
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan PIN</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Kelola Kategori -->
+  <div class="modal fade" id="modalKategori" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="modalKategoriTitle">Kelola Kategori</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="kategoriListContainer" class="mb-3"></div>
+          <hr>
+          <form id="formKategoriBaru" onsubmit="submitKategoriBaru(event)">
+            <input type="hidden" id="kategoriTipeAktif">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="kategori-icon-preview" id="kategoriIconPreview" style="background:#6C5CE7;"><i class="bi bi-tag-fill" id="kategoriIconPreviewIcon"></i></div>
+              <div class="flex-fill">
+                <div class="row g-2">
+                  <div class="col-8">
+                    <label class="form-label small mb-1">Nama Kategori</label>
+                    <input type="text" class="form-control form-control-sm" id="kategoriNamaBaru" placeholder="Contoh: Zakat" required>
+                  </div>
+                  <div class="col-4">
+                    <label class="form-label small mb-1">Warna</label>
+                    <input type="color" class="form-control form-control-sm form-control-color w-100" id="kategoriWarnaBaru" value="#6C5CE7" oninput="updateKategoriIconPreview()">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">Ikon</label>
+              <select class="form-select form-select-sm" id="kategoriIkonBaru" onchange="updateKategoriIconPreview()">
+                <option value="bi-tag-fill">Umum</option>
+                <option value="bi-cash-stack">Uang</option>
+                <option value="bi-cup-hot-fill">Makan/Minum</option>
+                <option value="bi-car-front-fill">Transport</option>
+                <option value="bi-bag-fill">Belanja</option>
+                <option value="bi-receipt">Tagihan</option>
+                <option value="bi-controller">Hiburan</option>
+                <option value="bi-heart-pulse-fill">Kesehatan</option>
+                <option value="bi-book-fill">Pendidikan</option>
+                <option value="bi-house-fill">Rumah</option>
+                <option value="bi-gift-fill">Hadiah</option>
+                <option value="bi-airplane-fill">Perjalanan</option>
+                <option value="bi-phone-fill">Pulsa/Internet</option>
+                <option value="bi-mortarboard-fill">Sekolah</option>
+                <option value="bi-graph-up-arrow">Investasi</option>
+                <option value="bi-three-dots">Lainnya</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm w-100"><i class="bi bi-plus-lg"></i> Tambah Kategori</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Off-canvas "Lainnya" -->
+  <div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasMenu" style="border-radius:24px 24px 0 0; max-height:75vh;">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Menu Lainnya</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="menu-grid">
+        <div class="menu-grid-item" onclick="navigateFromSheet('pemasukan')"><div class="menu-grid-icon"><i class="bi bi-arrow-down-circle-fill"></i></div><div class="menu-grid-label">Pemasukan</div></div>
+        <div class="menu-grid-item" onclick="navigateFromSheet('pengeluaran')"><div class="menu-grid-icon"><i class="bi bi-arrow-up-circle-fill"></i></div><div class="menu-grid-label">Pengeluaran</div></div>
+        <div class="menu-grid-item" onclick="navigateFromSheet('hutang')"><div class="menu-grid-icon"><i class="bi bi-credit-card-2-front-fill"></i></div><div class="menu-grid-label">Pinjaman</div></div>
+        <div class="menu-grid-item" onclick="navigateFromSheet('kalender')"><div class="menu-grid-icon"><i class="bi bi-calendar3-week"></i></div><div class="menu-grid-label">Kalender</div></div>
+        <div class="menu-grid-item" onclick="navigateFromSheet('laporan')"><div class="menu-grid-icon"><i class="bi bi-bar-chart-fill"></i></div><div class="menu-grid-label">Laporan</div></div>
+        <div class="menu-grid-item" onclick="navigateFromSheet('proyeksi')"><div class="menu-grid-icon"><i class="bi bi-graph-up"></i></div><div class="menu-grid-label">Proyeksi</div></div>
+        <div class="menu-grid-item" onclick="navigateFromSheet('pengingat')"><div class="menu-grid-icon"><i class="bi bi-bell-fill"></i></div><div class="menu-grid-label">Pengingat</div></div>
+        <div class="menu-grid-item" onclick="openModalLogo()"><div class="menu-grid-icon"><i class="bi bi-image"></i></div><div class="menu-grid-label">Ganti Logo</div></div>
+        <div class="menu-grid-item" onclick="openModalUbahPin()"><div class="menu-grid-icon"><i class="bi bi-key-fill"></i></div><div class="menu-grid-label">Ubah PIN</div></div>
+        <div class="menu-grid-item" onclick="openPublicLinkInfo()"><div class="menu-grid-icon"><i class="bi bi-share-fill"></i></div><div class="menu-grid-label">Link Publik</div></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js?v=1"></script>
+  <script src="js/app.js?v=1"></script>
+</body>
+</html>
