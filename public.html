@@ -271,7 +271,7 @@
         tbody.innerHTML += '<tr><td class="fw-semibold">'+p.bulanLabel+'</td>'+
           '<td class="text-end text-success">'+formatRupiah(p.pemasukanEstimasi)+'</td>'+
           '<td class="text-end text-danger">'+formatRupiah(p.pengeluaranEstimasi)+'</td>'+
-          '<td class="text-end text-warning">'+formatRupiah(p.cicilanPinjaman)+'</td>'+
+          '<td class="text-end text-warning">'+formatRupiah(p.cicilanPinjaman)+(p.cicilanSisaBerjalan>0 ? '<div class="small text-muted" style="font-size:.7rem;white-space:normal;">termasuk '+formatRupiah(p.cicilanSisaBerjalan)+' sisa cicilan s.d. '+p.cicilanSisaLabel+' yang belum dibayar</div>' : '')+'</td>'+
           '<td class="text-end fw-bold '+(p.saldoAkhir>=0?'text-success':'text-danger')+'">'+formatRupiah(p.saldoAkhir)+'</td></tr>';
       });
     }
